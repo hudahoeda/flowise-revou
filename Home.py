@@ -188,11 +188,11 @@ def load_flowise_chat_screen(api_url, headers, assistant_title, assistant_messag
             update_session_id_if_needed(response_json)
 
             flowise_reply = response_json.get('text', "No response received.")
-            with st.chat_message("Flowise"):
+            with st.chat_message("🤖"):
                 st.markdown(flowise_reply, True)
 
             # Save API reply to chat log
-            st.session_state.page_chat_logs[current_page].append({"name": "Flowise", "msg": flowise_reply})
+            st.session_state.page_chat_logs[current_page].append({"name": "🤖", "msg": flowise_reply})
 
         st.session_state.in_progress = False
         st.rerun()
