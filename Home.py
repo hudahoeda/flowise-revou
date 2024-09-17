@@ -269,7 +269,7 @@ def main():
         
     if st.session_state['logged_in']:
         pg = st.navigation({
-            "Flowise": [flowise]
+            "Flowise": [flowise],
             "Logout": [st.Page(logout, title="Logout", icon="🚪")]
         })
     else:
