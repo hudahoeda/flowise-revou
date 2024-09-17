@@ -43,7 +43,7 @@ enabled_file_upload_message = os.environ.get(
 )
 
 # Define your pages using st.Page with actual icons
-flowise = st.Page("pages_section/10_Flowise_Testing.py", 
+flowise = st.Page("pages_section/1_Flowise_Testing.py", 
                         title="Flowise Testing", 
                         icon="📝")
 
@@ -153,58 +153,72 @@ def generate_custom_api_response(api_url, headers, question):
         return None
 
 def load_flowise_chat_screen(api_url, headers, assistant_title, assistant_message):
-    current_page = st.session_state.get('current_page', 'Flowise Chat')
+    def get_current_page():
+        return st.session_state.get('current_page', 'Flowise Chat')
 
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload a file if needed (txt, pdf, json)",  
-        type=["txt", "pdf", "json"],
-        disabled=st.session_state.in_progress,
-    )
+    def initialize_chat_logs(current_page):
+        if 'page_chat_logs' not in st.session_state:
+            st.session_state.page_chat_logs = {}
+        if current_page not in st.session_state.page_chat_logs:
+            st.session_state.page_chat_logs[current_page] = []
 
-    if 'page_chat_logs' not in st.session_state:
-        st.session_state.page_chat_logs = {}
+    def display_chat_log(current_page):
+        for chat in st.session_state.page_chat_logs[current_page]:
+            with st.chat_message(chat["name"]):
+                st.markdown(chat["msg"], True)
 
-    if current_page not in st.session_state.page_chat_logs:
-        st.session_state.page_chat_logs[current_page] = []
+    def update_session_id_if_needed(response_json):
+        if 'sessionId' in response_json and st.session_state.get('flowise_session_id') is None:
+            st.session_state['flowise_session_id'] = response_json['sessionId']
 
-    st.title(assistant_title if assistant_title else "")
-    st.info(assistant_message)
-    st.write("Halo, bisa perkenalkan namamu?")  
-    
-    for chat in st.session_state.page_chat_logs[current_page]:
-        with st.chat_message(chat["name"]):
-            st.markdown(chat["msg"], True)
-
-    user_msg = st.chat_input(
-        "Message", on_submit=None, disabled=st.session_state.in_progress
-    )
-    
-    if user_msg:
+    def process_user_input(user_msg, current_page):
         st.session_state.in_progress = True
 
+        # Display user message
         with st.chat_message("user"):
             st.markdown(user_msg, True)
+
+        # Save user message to chat log
         st.session_state.page_chat_logs[current_page].append({"name": "user", "msg": user_msg})
 
-        # Custom API response
+        # Get API response
         response_json = generate_custom_api_response(api_url, headers, user_msg)
-        
+
         if response_json:
-            st.write(f"Current sessionId in session state: {st.session_state['flowise_session_id']}")
-
-            # Update session state with sessionId if not already present
-            if 'sessionId' in response_json and st.session_state['flowise_session_id'] is None:
-                st.session_state['flowise_session_id'] = response_json['sessionId']
-
-            st.write(f"Updated sessionId after response: {st.session_state['flowise_session_id']}")
+            update_session_id_if_needed(response_json)
 
             flowise_reply = response_json.get('text', "No response received.")
             with st.chat_message("Flowise"):
                 st.markdown(flowise_reply, True)
+
+            # Save API reply to chat log
             st.session_state.page_chat_logs[current_page].append({"name": "Flowise", "msg": flowise_reply})
 
         st.session_state.in_progress = False
         st.rerun()
+
+    # Main Logic Execution
+    current_page = get_current_page()
+
+    # Initialize UI Components
+    st.sidebar.file_uploader(
+        "Upload a file if needed (txt, pdf, json)",  
+        type=["txt", "pdf", "json"],
+        disabled=st.session_state.get('in_progress', False),
+    )
+
+    initialize_chat_logs(current_page)
+
+    st.title(assistant_title or "")
+    st.info(assistant_message)
+    st.write("Halo, bisa perkenalkan namamu?")  
+
+    display_chat_log(current_page)
+
+    user_msg = st.chat_input("Message", disabled=st.session_state.get('in_progress', False))
+
+    if user_msg:
+        process_user_input(user_msg, current_page)
 
 def login():
     st.title("Flowise Testing")
