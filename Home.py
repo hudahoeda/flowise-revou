@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from pyairtable import Api
 import time
 import uuid
-from flowise import Flowise, PredictionData
 import requests
 
 # Add these to your existing environment variable loading
