@@ -181,17 +181,21 @@ def load_flowise_chat_screen(api_url, headers, assistant_title, assistant_messag
         # Save user message to chat log
         st.session_state.page_chat_logs[current_page].append({"name": "user", "msg": user_msg})
 
-        # Get API response
-        response_json = generate_custom_api_response(api_url, headers, user_msg)
+        # Display spinner while waiting for API response
+        with st.spinner("AI is thinking..."):
+            # Get API response
+            response_json = generate_custom_api_response(api_url, headers, user_msg)
 
         if response_json:
             update_session_id_if_needed(response_json)
 
             flowise_reply = response_json.get('text', "No response received.")
+            
+            # Show AI response with "default" name for the default style (yellow bubble)
             with st.chat_message("🤖"):
                 st.markdown(flowise_reply, True)
 
-            # Save API reply to chat log
+            # Save AI reply to chat log
             st.session_state.page_chat_logs[current_page].append({"name": "🤖", "msg": flowise_reply})
 
         st.session_state.in_progress = False
