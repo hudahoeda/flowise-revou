@@ -4,7 +4,6 @@ import re
 import json
 
 import streamlit as st
-import openai
 from openai import AssistantEventHandler
 from tools import TOOL_MAP
 from typing_extensions import override
@@ -27,16 +26,6 @@ except Exception as e:
     st.error(f"Error initializing Airtable API: {str(e)}")
     st.stop()
 
-load_dotenv()
-
-def str_to_bool(str_input):
-    if not isinstance(str_input, str):
-        return False
-    return str_input.lower() == "true"
-
-# Load environment variables
-openai_api_key = os.environ.get("OPENAI_API_KEY")
-instructions = os.environ.get("RUN_INSTRUCTIONS", "")
 enabled_file_upload_message = os.environ.get(
     "ENABLED_FILE_UPLOAD_MESSAGE", "Upload a file"
 )
@@ -45,8 +34,6 @@ enabled_file_upload_message = os.environ.get(
 flowise = st.Page("pages_section/1_Flowise_Testing.py", 
                         title="Flowise Testing", 
                         icon="📝")
-
-client = openai.OpenAI(api_key=openai_api_key)
 
 def generate_session_id():
     return str(uuid.uuid4())
@@ -75,40 +62,6 @@ def get_student_id(username):
 def verify_password(stored_password, provided_password):
     return stored_password == provided_password
 
-def create_file_link(file_name, file_id):
-    content = client.files.content(file_id)
-    content_type = content.response.headers["content-type"]
-    b64 = base64.b64encode(content.text.encode(content.encoding)).decode()
-    link_tag = f'<a href="data:{content_type};base64,{b64}" download="{file_name}">Download Link</a>'
-    return link_tag
-
-
-def format_annotation(text):
-    citations = []
-    text_value = text.value
-    for index, annotation in enumerate(text.annotations):
-        text_value = text.value.replace(annotation.text, f" [{index}]")
-
-        if file_citation := getattr(annotation, "file_citation", None):
-            cited_file = client.files.retrieve(file_citation.file_id)
-            citations.append(
-                f"[{index}] {file_citation.quote} from {cited_file.filename}"
-            )
-        elif file_path := getattr(annotation, "file_path", None):
-            link_tag = create_file_link(
-                annotation.text.split("/")[-1],
-                file_path.file_id,
-            )
-            text_value = re.sub(r"\[(.*?)\]\s*\(\s*(.*?)\s*\)", link_tag, text_value)
-    text_value += "\n\n" + "\n".join(citations)
-    return text_value
-
-
-def handle_uploaded_file(uploaded_file):
-    file = client.files.create(file=uploaded_file, purpose="assistants")
-    return file
-
-
 if "tool_call" not in st.session_state:
     st.session_state.tool_calls = []
 
@@ -117,7 +70,6 @@ if "chat_log" not in st.session_state:
 
 if "in_progress" not in st.session_state:
     st.session_state.in_progress = False
-
 
 def disable_form():
     st.session_state.in_progress = True
