@@ -10,8 +10,8 @@ else:
     # Using your custom API URL and Authorization header
     API_URL = os.environ.get('FLOWISE_ENDPOINT')
     headers = {"Authorization": os.environ.get('FLOWISE_KEY')}  # Use your actual key here
-    assistant_message = "Asisten untuk testing Flowise via custom API"
-    assistant_title = "Flowise Custom API Chat Interface"
+    assistant_message = "TL Assistant is here to help you with your queries. Please type your query below."
+    assistant_title = "TL Assistant"
     
     # Use the modified Flowise chat screen loader
     load_flowise_chat_screen(API_URL, headers, assistant_title, assistant_message)
