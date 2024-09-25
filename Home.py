@@ -31,8 +31,8 @@ enabled_file_upload_message = os.environ.get(
 )
 
 # Define your pages using st.Page with actual icons
-flowise = st.Page("pages_section/1_Flowise_Testing.py", 
-                        title="Flowise Testing", 
+flowise = st.Page("pages_section/1_Flowise_TL.py", 
+                        title="TL Assistant", 
                         icon="📝")
 
 def generate_session_id():
@@ -207,7 +207,7 @@ def load_flowise_chat_screen(api_url, headers, assistant_title, assistant_messag
         process_user_input(user_msg, current_page)
 
 def login():
-    st.title("Flowise Testing")
+    st.title("Revo Assistant")
     st.text("Enter your credential")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
@@ -247,7 +247,7 @@ def get_current_page_name(pg):
 
 def main():
     st.logo("https://cdn.prod.website-files.com/61af164800e38c4f53c60b4e/61af164800e38c11efc60b6d_RevoU.svg")
-    st.set_page_config(page_title="Revo AI Coach")
+    st.set_page_config(page_title="Revo Assistant")
 
     # Initialize session state
     if "page_thread_ids" not in st.session_state:
