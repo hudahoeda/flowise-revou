@@ -79,6 +79,22 @@ def reset_chat():
     if current_page in st.session_state.page_chat_logs:
         st.session_state.page_chat_logs[current_page] = []
     st.session_state.in_progress = False
+
+def save_chat_history(session_id, username, user_input, response_json):
+    try:
+        # Serialize the full response JSON to a string
+        response_json_str = json.dumps(response_json)
+
+        table = airtable.table(BASE_ID, CHAT_TABLE_NAME)
+        table.create({
+            "Timestamp": int(time.time()),
+            "SessionID": session_id,
+            "ResponseJSON": response_json_str, # Store the full response JSON as a string
+            "Username": username,
+            "UserInput": user_input
+        })
+    except Exception as e:
+        st.error(f"Error saving chat history: {str(e)}")
         
 def generate_custom_api_response(api_url, headers, question):
     # Retrieve the session ID directly from the session state
@@ -132,22 +148,37 @@ def load_flowise_chat_screen(api_url, headers, assistant_title, assistant_messag
         # Save user message to chat log
         st.session_state.page_chat_logs[current_page].append({"name": "user", "msg": user_msg})
 
-        # Display spinner while waiting for API response
+        # Retrieve session-related variables
+        session_id = st.session_state.get('flowise_session_id', None)
+        username = st.session_state.get('username', 'Unknown User')
+
+        # Display spinner while waiting for both API response and Airtable save
         with st.spinner("AI is thinking..."):
             # Get API response
             response_json = generate_custom_api_response(api_url, headers, user_msg)
 
-        if response_json:
-            update_session_id_if_needed(response_json)
+            if response_json:
+                update_session_id_if_needed(response_json)
 
-            flowise_reply = response_json.get('text', "No response received.")
-            
-            # Show AI response with "default" name for the default style (yellow bubble)
-            with st.chat_message("🤖"):
-                st.markdown(flowise_reply, True)
+                flowise_reply = response_json.get('text', "No response received.")
 
-            # Save AI reply to chat log
-            st.session_state.page_chat_logs[current_page].append({"name": "🤖", "msg": flowise_reply})
+                # Show AI response with "default" name for the default style (yellow bubble)
+                with st.chat_message("🤖"):
+                    st.markdown(flowise_reply, True)
+
+                # Save AI reply to chat log
+                st.session_state.page_chat_logs[current_page].append({"name": "🤖", "msg": flowise_reply})
+
+                # Call save_chat_history to log the interaction (inside spinner)
+                try:
+                    save_chat_history(
+                        session_id=session_id,
+                        username=username,
+                        user_input=user_msg,
+                        response_json=response_json
+                    )
+                except Exception as e:
+                    st.error(f"Error saving chat history: {str(e)}")
 
         st.session_state.in_progress = False
         st.rerun()
